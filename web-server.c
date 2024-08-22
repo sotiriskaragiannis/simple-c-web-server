@@ -6,13 +6,15 @@
 #include <unistd.h>
 
 #define PORT 80
-#define MAX_LENGTH 1024
 #define WEBSITE_ROOT_PATH "/var/www/html"
+#define MAX_LENGTH 8192
+#define BUFFER_LENGTH 1024
 #define DEFAULT_PAGE "/index.html"
 #define PROTOCOL "HTTP/1.1"
 
 void build_response(char *response, int status_code, char *response_body);
 void handle_request(int new_socket);
+void extract_path(char *http_request, char *path);
 
 int main() {
 
@@ -65,31 +67,22 @@ void build_response(char *response, int status_code, char *response_body) {
 
 void handle_request(int new_socket) {
 
-    char buffer[MAX_LENGTH] = {0};
+    char buffer[BUFFER_LENGTH] = {0};
+    char http_request[BUFFER_LENGTH] = {0};
     char response[MAX_LENGTH] = {0};
     char response_body[MAX_LENGTH] = {0};
-    ssize_t http_request;
+    char path[BUFFER_LENGTH];
+    char filepath[BUFFER_LENGTH];
+    ssize_t valread;
     char *token;
-    char *path;
     FILE *fptr;
-    char filepath[MAX_LENGTH];
 
-    http_request = read(new_socket, buffer,
-                        1024 - 1); // subtract 1 for the null
+    valread = read(new_socket, http_request,
+                        BUFFER_LENGTH - 1); // subtract 1 for the null
                                    // terminator at the end
 
     // Extracting the path from the HTTP request
-    token = strtok(buffer, " ");
-    while (token != NULL)
-    {
-        if (strcmp(token, "GET") == 0 || strcmp(token, "POST") == 0)
-        {
-            token = strtok(NULL, " ");
-            path = token;
-            break;
-        }
-        token = strtok(NULL, " ");
-    }
+    extract_path(http_request, path);
 
     // If the path is directory, then we will serve the default page
     if (strcmp(path, "/") == 0)
@@ -110,7 +103,7 @@ void handle_request(int new_socket) {
     else
     {
         // reading the file content
-        while (fgets(buffer, MAX_LENGTH, fptr) != NULL)
+        while (fgets(buffer, BUFFER_LENGTH, fptr) != NULL)
         {
             sprintf(response_body, "%s%s", response_body, buffer);
         }
@@ -121,4 +114,17 @@ void handle_request(int new_socket) {
     }
     send(new_socket, response, strlen(response), 0);
     close(new_socket);
+}
+
+void extract_path(char *http_request, char *path) {
+    char *token;
+    token = strtok(http_request, " ");
+    while (token != NULL) {
+        if (strcmp(token, "GET") == 0 || strcmp(token, "POST") == 0) {
+            token = strtok(NULL, " ");
+            strcpy(path, token);
+            break;
+        }
+        token = strtok(NULL, " ");
+    }
 }
