@@ -13,7 +13,7 @@
 #define DEFAULT_PAGE "/index.html"
 #define PROTOCOL "HTTP/1.1"
 
-void build_response(char *response, int status_code, char *response_body);
+void build_response(char *response, int status_code, char *response_message, char *response_body);
 void *handle_request(void *);
 void extract_path(char *http_request, char *path);
 
@@ -82,9 +82,9 @@ int main()
     return 0;
 }
 
-void build_response(char *response, int status_code, char *response_body)
+void build_response(char *response, int status_code, char *response_message, char *response_body)
 {
-    sprintf(response, "%s %d OK\r\n\r\n%s\r\n", PROTOCOL, status_code, response_body);
+    sprintf(response, "%s %d %s\r\n\r\n%s\r\n", PROTOCOL, status_code, response_message, response_body);
 }
 
 void *handle_request(void *socket_desc)
@@ -123,7 +123,7 @@ void *handle_request(void *socket_desc)
     if (fptr == NULL)
     {
         printf("Requested path: %s not found\n", path);
-        build_response(response, 404, "Requested path not found");
+        build_response(response, 404, "Not Found", "Requested path not found");
     }
     else
     {
@@ -132,7 +132,7 @@ void *handle_request(void *socket_desc)
         {
             sprintf(response_body, "%s%s", response_body, buffer);
         }
-        build_response(response, 200, response_body);
+        build_response(response, 200, "OK", response_body);
         // clearing the response and response_body and closing the file
         fclose(fptr);
         // closing the connected socket
