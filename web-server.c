@@ -1,3 +1,7 @@
+// This is a simple web server that serves the static files from the /var/www/html directory.
+// It works on the HTTP/1.1 protocol and listens on port 80.
+// Platform: Unix-like systems
+
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
